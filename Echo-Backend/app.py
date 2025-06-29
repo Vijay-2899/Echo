@@ -1,12 +1,13 @@
+from flask_socketio import SocketIO
+
 from flask import Flask
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
-
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
-
+@socketio.on('hello')
+def test_message(message):
+    socketio.emit('hello', message)
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)
