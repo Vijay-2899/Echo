@@ -45,3 +45,27 @@ function App() {
                 setRoomFeedback(data.msg);
             }
         });
+
+        return () => {
+            socket.off('receive_message');
+            socket.off('connect');
+            socket.off('disconnect');
+            socket.off('message');
+        };
+    }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
+    const handleJoinRoom = () => {
+        if (!displayName.trim()) {
+            alert('Please enter your Display Name first.');
+            return;
+        }
+        if (!room.trim()) {
+            alert('Please enter or select a Room name.');
+            return;
+        }
+
+        // Emit 'join' event to the backend
+        socket.emit('join', { room: room, display_name: displayName });
+        setRoomFeedback(`Attempting to join room: ${room} as ${displayName}...`);
+        setMessages([]); // Clear messages when attempting to join a new room
+    };
