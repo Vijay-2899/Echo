@@ -157,3 +157,78 @@ function App() {
                     </FormControl>
                 </Box>
 
+                                <Box sx={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', mb: 1 }}>
+                    <Button variant="contained" onClick={handleJoinRoom}>Join Room</Button>
+                    <Button variant="outlined" onClick={handleLeaveRoom}>Leave Room</Button>
+                </Box>
+
+                <Typography id="room-feedback" sx={{ width: '100%', textAlign: 'center', mt: 1, color: 'primary.main' }}>
+                    {room ? `Current Room: ${room}. ` : ''}{roomFeedback}
+                </Typography>
+            </Box>
+
+            {/* Chat Screen - Where messages are displayed and sent */}
+            <Box component="section" className="chat-screen" sx={{ backgroundColor: 'background.default', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="h6" sx={{ padding: '15px 20px', borderBottom: '1px solid #e0e0e0', backgroundColor: 'background.paper', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    Chat Room: {room || 'Not Joined'}
+                </Typography>
+                <Box
+                    className="messages"
+                    id="messages-box"
+                    sx={{
+                        flexGrow: 1,
+                        overflowY: 'auto',
+                        padding: '20px',
+                        backgroundColor: 'background.default',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                    }}
+                >
+                    {/* Display messages */}
+                    {messages.map((msg, index) => (
+                        <Box
+                            key={index}
+                            // Determine if it's 'my-message' or 'other-message' based on display_name
+                            className={`message ${msg.display_name === displayName ? 'my-message' : 'other-message'}`}
+                            sx={{
+                                maxWidth: '70%',
+                                padding: '8px 12px',
+                                borderRadius: '18px',
+                                marginBottom: '10px',
+                                wordBreak: 'break-word',
+                                alignSelf: msg.display_name === displayName ? 'flex-end' : 'flex-start',
+                                backgroundColor: msg.display_name === displayName ? '#DCF8C6' : '#FFFFFF', // Light green for self, white for others
+                                color: '#333',
+                                boxShadow: '0 1px 0.5px rgba(0, 0, 0, 0.13)',
+                            }}
+                        >
+                            <Typography component="strong" sx={{ display: 'block', marginBottom: '4px', color: '#075E54' }}>
+                                {msg.display_name}:
+                            </Typography>
+                            <Typography component="span" sx={{ fontSize: '1rem' }}>{msg.message}</Typography>
+                        </Box>
+                    ))}
+                </Box>
+                <Box className="message-input-area" sx={{ backgroundColor: 'background.paper', padding: '15px 20px', display: 'flex', gap: '15px', borderTop: '1px solid #e0e0e0', alignItems: 'center' }}>
+                    <TextField
+                        type="text"
+                        placeholder="Type your message..."
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') sendMessage();
+                        }}
+                    />
+                    <Button variant="contained" onClick={sendMessage}>Send</Button>
+                </Box>
+            </Box>
+        </Box>
+    );
+}
+
+export default App;
+
