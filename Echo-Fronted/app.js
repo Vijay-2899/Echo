@@ -82,3 +82,78 @@ function App() {
         }
     };
 
+    const sendMessage = () => {
+        if (message.trim() && room.trim() && displayName.trim()) {
+            const messageData = {
+                room: room,
+                display_name: displayName,
+                message: message
+            };
+            // Emit 'send_message' event to the backend
+            socket.emit('send_message', messageData);
+            setMessage(''); // Clear input field
+            console.log('Message sent:', messageData);
+        } else if (!room.trim()) {
+            alert('Please enter or select a room first.');
+        } else if (!displayName.trim()) {
+            alert('Please enter your Display Name.');
+        } else {
+            alert('Message cannot be empty.');
+        }
+    };
+
+    return (
+        <Box className="container">
+            {/* Header / Top Bar using AppBar and Toolbar */}
+            <AppBar position="static">
+                <Toolbar sx={{ justifyContent: 'space-between' }}>
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                        LetsChat
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+
+            {/* Room Control Section */}
+            <Box className="room-control" sx={{ backgroundColor: 'background.paper', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '15px', mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {/* Your Display Name field */}
+                    <TextField
+                        label="Your Display Name"
+                        variant="outlined"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        size="small"
+                        InputProps={{ endAdornment: <Box sx={{ display: 'flex', alignItems: 'center' }}><span role="img" aria-label="lock">🔒</span></Box> }}
+                        sx={{ minWidth: '180px' }}
+                    />
+
+                    {/* Manual Room Name Input */}
+                    <TextField
+                        label="Enter Room Name"
+                        variant="outlined"
+                        value={room}
+                        onChange={(e) => setRoom(e.target.value)}
+                        size="small"
+                        sx={{ minWidth: '180px' }}
+                    />
+
+                    {/* Predefined Rooms Dropdown */}
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <InputLabel id="predefined-room-select-label">Select Room</InputLabel>
+                        <Select
+                            labelId="predefined-room-select-label"
+                            value={room}
+                            label="Select Room"
+                            onChange={(e) => setRoom(e.target.value)}
+                        >
+                            {/* Option to clear room selection if needed */}
+                            <MenuItem value=""><em>None</em></MenuItem>
+                            {predefinedRooms.map((roomName) => (
+                                <MenuItem key={roomName} value={roomName}>
+                                    {roomName}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Box>
+
