@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -93,4 +94,12 @@ def test_ecdh():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5000,
+        debug=True,
+        allow_unsafe_werkzeug=True
+    )
+
+
