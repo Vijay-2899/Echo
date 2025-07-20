@@ -69,3 +69,60 @@ body, html, #root {
   background-color: var(--mui-palette-background-paper); /* Header-like background */
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
+
+.messages {
+  flex-grow: 1; /* Message area takes available height */
+  overflow-y: auto; /* Enable scrolling for messages */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Spacing between message bubbles */
+  background-color: var(--mui-palette-grey-50); /* A slightly different background for chat area */
+}
+
+/* Message Bubble Styling */
+.message {
+  padding: 8px 12px;
+  border-radius: 18px;
+  margin-bottom: 10px;
+  max-width: 70%;
+  word-break: break-word;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+}
+
+.my-message {
+  background-color: #DCF8C6; /* Light green for sent messages */
+  align-self: flex-end;
+}
+
+.other-message {
+  background-color: #FFFFFF; /* White for received messages */
+  align-self: flex-start;
+}
+
+/* Message Input Area */
+.message-input-area {
+  display: flex;
+  padding: 15px 20px;
+  gap: 15px; /* Spacing between text field and button */
+  background-color: var(--mui-palette-background-paper);
+  border-top: 1px solid var(--mui-palette-divider); /* Separator from messages */
+  align-items: center;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.02); /* Subtle shadow from bottom */
+}
+
+.message-input-area .MuiTextField-root {
+  flex-grow: 1; /* Text field takes most space */
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .room-control .MuiBox-root {
+    flex-direction: column; /* Stack inputs/buttons vertically on small screens */
+  }
+  .room-control .MuiTextField-root,
+  .room-control .MuiButton-root,
+  .room-control .MuiFormControl-root {
+    width: 100% !important; /* Make them full width on small screens */
+  }
+}
