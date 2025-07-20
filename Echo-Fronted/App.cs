@@ -54,3 +54,18 @@ body, html, #root {
   color: var(--mui-palette-text-secondary);
   margin-top: 5px;
 }
+
+.chat-screen {
+  flex-grow: 1; /* Make chat screen take all available vertical space */
+  display: flex;
+  flex-direction: column; /* Stack messages and input vertically */
+  background-color: var(--mui-palette-background-default); /* Background for the chat area */
+}
+
+.chat-screen h6 { /* Styling for "Chat Screen" title */
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-primary);
+  background-color: var(--mui-palette-background-paper); /* Header-like background */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
