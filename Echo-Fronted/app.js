@@ -18,3 +18,30 @@ function App() {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [roomFeedback, setRoomFeedback] = useState('');
+     
+    
+    useEffect(() => {
+        // Handle incoming messages
+        socket.on('receive_message', (data) => {
+            console.log("Message received:", data);
+            setMessages((prevMessages) => [...prevMessages, data]);
+        });
+
+        // Optional: Handle connection/disconnection feedback
+        socket.on('connect', () => {
+            console.log('Connected to Socket.IO backend');
+            setRoomFeedback(prev => prev + (prev ? ' | ' : '') + 'Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from Socket.IO backend');
+            setRoomFeedback(prev => prev + (prev ? ' | ' : '') + 'Disconnected from server');
+        });
+
+        socket.on('message', (data) => { // This listens for messages sent directly via send() in Flask
+            console.log("Server message:", data);
+            // This is typically for server-side messages like "user joined/left"
+            if (data.msg) {
+                setRoomFeedback(data.msg);
+            }
+        });
