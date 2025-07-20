@@ -69,3 +69,16 @@ function App() {
         setRoomFeedback(`Attempting to join room: ${room} as ${displayName}...`);
         setMessages([]); // Clear messages when attempting to join a new room
     };
+
+    const handleLeaveRoom = () => {
+        if (room.trim() && displayName.trim()) {
+            // Emit 'leave' event to the backend
+            socket.emit('leave', { room: room, display_name: displayName });
+            setRoomFeedback(`Attempting to leave room: ${room}...`);
+            setRoom(''); // Clear the room state
+            setMessages([]); // Clear messages
+        } else {
+            alert('Not currently in a room to leave, or display name is missing.');
+        }
+    };
+
