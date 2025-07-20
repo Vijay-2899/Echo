@@ -46,3 +46,11 @@ body, html, #root {
     flex-wrap: wrap; /* Allow wrapping for responsiveness */
     gap: 15px; /* Spacing between individual form elements */
 }
+
+#room-feedback {
+  width: 100%; /* Take full width for feedback message */
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--mui-palette-text-secondary);
+  margin-top: 5px;
+}
