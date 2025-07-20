@@ -26,3 +26,23 @@ body, html, #root {
   border-radius: 8px; /* Consistent rounded corners for the app container */
   overflow: hidden; /* Ensure no overflow outside rounded corners */
 }
+
+.room-control {
+  display: flex;
+  flex-direction: column; /* Stack items vertically within room control */
+  gap: 15px; /* Spacing between sections of inputs/buttons */
+  padding: 20px;
+  background-color: var(--mui-palette-background-paper);
+  border-bottom: 1px solid var(--mui-palette-divider); /* Subtle separator */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Very subtle shadow */
+  align-items: center; /* Center content horizontally */
+  justify-content: center; /* Center content vertically */
+}
+
+.room-control > .MuiBox-root { /* Styling for the inner Box components within room-control */
+    width: 100%; /* Ensure inner boxes take full width for centering content */
+    display: flex;
+    justify-content: center; /* Center items within these inner boxes */
+    flex-wrap: wrap; /* Allow wrapping for responsiveness */
+    gap: 15px; /* Spacing between individual form elements */
+}
