@@ -1,105 +1,115 @@
-
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, join_room, leave_room, send, emit
+from flask_cors import CORS
+import smtplib
+import ssl
+import random
+import os
+from email.message import EmailMessage
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-import base64
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from reportlab.pdfgen import canvas
+from PyPDF2 import PdfReader, PdfWriter
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
 
-server_private_key = ec.generate_private_key(ec.SECP384R1())
-server_public_key = server_private_key.public_key()
+otp_store = {}
 
-shared_keys = {}
+SMTP_EMAIL = 'your_email@gmail.com'
+SMTP_PASS = 'your_app_password'
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 465
 
-@socketio.on('send_message')
-def handle_send_message(data):
-    room = data.get('room')
-    user_id = data.get('user_id')
-    display_name = data.get('display_name')
-    message = data.get('message')
-    if room and message:
-        socketio.emit('receive_message', {
-            'user_id': user_id,
-            'display_name': display_name,
-            'message': message
-        }, room=room)
+@app.route('/send-otp', methods=['POST'])
+def send_otp():
+    email = request.json.get('email')
+    otp = str(random.randint(100000, 999999))
+    otp_store[email] = otp
+    send_email(email, "Your OTP", f"Your login OTP is: {otp}")
+    return jsonify({"msg": "OTP sent"}), 200
 
-@socketio.on('join')
-def on_join(data):
-    room = data.get('room')
-    display_name = data.get('display_name')
-    if room:
-        join_room(room)
-        send({'msg': f"{display_name} has joined the room."}, room=room)
+@app.route('/verify-otp', methods=['POST'])
+def verify_otp():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    if otp_store.get(email) == otp:
+        return jsonify({"msg": "OTP verified"}), 200
+    return jsonify({"msg": "Invalid OTP"}), 401
 
-@socketio.on('leave')
-def on_leave(data):
-    room = data.get('room')
-    display_name = data.get('display_name')
-    if room:
-        leave_room(room)
-        send({'msg': f"{display_name} has left the room."}, room=room)
-
-@socketio.on('client_public_key')
-def handle_client_public_key(data):
-    sid = request.sid if hasattr(request, 'sid') else None
-    if not sid:
-        sid = data.get('sid')
-    pem_str = data.get('client_public_key')
-    try:
-        client_public_key = serialization.load_pem_public_key(pem_str.encode())
-        shared_key = server_private_key.exchange(ec.ECDH(), client_public_key)
-        derived_key = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
-            info=b'handshake data'
-        ).derive(shared_key)
-        shared_keys[sid] = derived_key
-        server_pub_pem = server_public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
-        emit('server_public_key', { 'server_public_key': server_pub_pem.decode() })
-    except Exception as e:
-        emit('error', { 'msg': f'Key exchange failed: {str(e)}' })
-
-@app.route('/test-ecdh', methods=['POST'])
-def test_ecdh():
-    data = request.get_json()
-    pem_str = data.get('client_public_key')
-    try:
-        client_public_key = serialization.load_pem_public_key(pem_str.encode())
-        shared_key = server_private_key.exchange(ec.ECDH(), client_public_key)
-        derived_key = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
-            info=b'handshake data'
-        ).derive(shared_key)
-        server_pub_pem = server_public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
-        return jsonify({
-            'server_public_key': server_pub_pem.decode(),
-            'derived_key_sample': base64.b64encode(derived_key).decode()
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+@app.route('/generate-keys', methods=['POST'])
+def generate_keys():
+    email = request.json['email']
+    name = request.json['name']  # e.g. 'john'
+    birthyear = request.json['birthyear']  # e.g. '2000'
+    password = (name[:4] + str(birthyear)).lower()
 
 
-if __name__ == '__main__':
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=5000,
-        debug=True,
-        allow_unsafe_werkzeug=True
+    priv = ec.generate_private_key(ec.SECP384R1(), default_backend())
+    pub = priv.public_key()
+
+    priv_pem = priv.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption()
+    )
+    pub_pem = pub.public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo
     )
 
+    pdf_path = f"/tmp/{email.replace('@','_')}_keys.pdf"
+    tmp = "/tmp/temp.pdf"
+    c = canvas.Canvas(tmp)
+    c.drawString(100, 750, "Your Secure Chat Keys")
+    c.drawString(100, 720, "Public Key:")
+    c.drawString(100, 700, pub_pem.decode().split('\n')[0])
+    c.drawString(100, 640, "Private Key (keep safe!):")
+    c.drawString(100, 620, priv_pem.decode().split('\n')[0])
+    c.save()
 
+    reader = PdfReader(tmp)
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.encrypt(password)
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
+    os.remove(tmp)
+
+    send_email_with_attachment(email, "Your Secure Chat Keys",
+                               "Use your password to open the attached PDF.", pdf_path)
+
+    os.remove(pdf_path)
+
+    return jsonify({"msg": "Keys sent via email", "public_key": pub_pem.decode()}), 200
+
+def send_email(to, subject, body):
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = to
+    msg.set_content(body)
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
+        server.login(SMTP_EMAIL, SMTP_PASS)
+        server.send_message(msg)
+
+def send_email_with_attachment(to, subject, body, filepath):
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = to
+    msg.set_content(body)
+
+    with open(filepath, 'rb') as f:
+        msg.add_attachment(f.read(), maintype='application', subtype='pdf', filename=os.path.basename(filepath))
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
+        server.login(SMTP_EMAIL, SMTP_PASS)
+        server.send_message(msg)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
