@@ -159,5 +159,33 @@ async def on_join(sid, data):
         "message":      f"{data.get('display_name','Anon')} joined {room}"
     }, room=room)
 
+@socket.on("client_public_key")
+async def handle_client_pubkey(sid, data):
+    client_pem = data["client_public_key"].encode()
+    client_pub = serialization.load_pem_public_key(client_pem)
+    server_priv = ec.generate_private_key(ec.SECP384R1())
+    server_pub  = server_priv.public_key()
+
+    shared = server_priv.exchange(ec.ECDH(), client_pub)
+    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None,
+               info=b"handshake data",).derive(shared)
+    shared_secrets[sid] = key
+
+    server_pem = server_pub.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    ).decode()
+    await socket.emit("server_public_key", {
+        "server_public_key": server_pem,
+        "derived_key":       base64.b64encode(key).decode()
+    }, to=sid)
+
+@socket.on("send_message")
+async def on_message(sid, data):
+    await socket.emit("receive_message", {
+        "display_name": data["display_name"],
+        "message":      data["message"]
+    }, room=data["room"])
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
