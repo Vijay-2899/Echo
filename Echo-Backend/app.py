@@ -70,21 +70,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-@fastapp.post("/register")
-def register(payload: RegisterSchema, db: Session = Depends(get_db)):
-    otp = str(random.randint(100000, 999999))
-    existing = db.query(Otp).filter(Otp.email == payload.email).first()
-    if existing:
-        existing.otp = otp
-        existing.created_at = datetime.utcnow()
-    else:
-        db.add(Otp(email=payload.email, otp=otp))
-    db.commit()
-
-    send_email_otp(payload.email, otp)
-    return {"message": "OTP sent to your email"}
-
-
 def send_email_otp(email: str, otp: str):
     smtp_server   = "smtp.gmail.com"
     smtp_port     = 587
@@ -101,6 +86,19 @@ def send_email_otp(email: str, otp: str):
         server.login(smtp_username, smtp_password)
         server.send_message(msg)
 
+@fastapp.post("/register")
+def register(payload: RegisterSchema, db: Session = Depends(get_db)):
+    otp = str(random.randint(100000, 999999))
+    existing = db.query(Otp).filter(Otp.email == payload.email).first()
+    if existing:
+        existing.otp = otp
+        existing.created_at = datetime.utcnow()
+    else:
+        db.add(Otp(email=payload.email, otp=otp))
+    db.commit()
+
+    send_email_otp(payload.email, otp)
+    return {"message": "OTP sent to your email"}
 
 @fastapp.post("/verify-otp")
 def verify_otp(payload: VerifyOtpSchema, db: Session = Depends(get_db)):
