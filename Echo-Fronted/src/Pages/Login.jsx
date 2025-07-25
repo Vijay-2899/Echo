@@ -22,7 +22,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch('https://echo-b2vk.onrender.com/login', {
+      const res = await fetch('https://echo-chat-5cpj.onrender.com/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,36 +47,7 @@ const Login = () => {
   };
 
   return (
-    // <div className="p-8">
-    //   <h2 className="text-xl font-bold">Login</h2>
-    //   <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
-    //     <input
-    //       name="email"
-    //       type="email"
-    //       placeholder="Email"
-    //       value={email}
-    //       onChange={(e) => setEmail(e.target.value)}
-    //       required
-    //     />
-    //     <input
-    //       name="password"
-    //       type="password"
-    //       placeholder="Password"
-    //       value={password}
-    //       onChange={(e) => setPassword(e.target.value)}
-    //       required
-    //     />
-    //     <button type="submit" className="bg-green-500 text-white px-4 py-1 rounded">
-    //       Login
-    //     </button>
-    //   </form>
-    //   <br />
-    //   <br />
-    //   <p className="mt-4">
-    //     Don't have an account? <a href="/register" className="text-blue-500">Register here</a>
-    //   </p>
-    //   {message && <p className="mt-2 text-red-500">{message}</p>}
-    // </div>
+    
     <Box
       display="flex"
       flexDirection="column"

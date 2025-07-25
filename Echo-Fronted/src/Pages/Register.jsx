@@ -19,7 +19,7 @@ const Register = () => {
 
   const handleSendOtp = async () => {
     try {
-      await axios.post("https://echo-b2vk.onrender.com/register", {
+      await axios.post("https://echo-chat-5cpj.onrender.com/register", {
         email: formData.email,
         username: formData.username,
         password: formData.password,
@@ -35,7 +35,7 @@ const Register = () => {
 
   const handleVerifyAndRegister = async () => {
     try {
-      await axios.post("https://echo-b2vk.onrender.com/verify-otp", {
+      await axios.post("https://echo-chat-5cpj.onrender.com/verify-otp", {
         email: formData.email,
         password: formData.password,
         otp: formData.otp,
