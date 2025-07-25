@@ -70,6 +70,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
 def send_email_otp(email: str, otp: str):
     smtp_server   = "smtp.gmail.com"
     smtp_port     = 587
@@ -120,7 +123,12 @@ def verify_otp(payload: VerifyOtpSchema, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "OTP verified, user registered!"}
 
-
+@fastapp.post("/login")
+def login(payload: LoginSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    return {"message": "Login successful", "user_id": user.id}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", port=5000, reload=True)
