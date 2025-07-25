@@ -57,3 +57,21 @@ function ChatRoom() {
       }
       console.groupEnd();
     });
+
+    socket.on('receive_message', async ({ display_name, message }) => {
+      if (!roomKeyRef.current) return;
+      const { ciphertext, iv } = JSON.parse(message);
+      const ct = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+      const ivArr = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+      try {
+        const pt = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: ivArr },
+          roomKeyRef.current,
+          ct
+        );
+        const text = new TextDecoder().decode(pt);
+        setMessages(m => [...m, { display_name, message: text }]);
+      } catch (err) {
+        console.error('Decrypt failed:', err);
+      }
+    });
