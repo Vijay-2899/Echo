@@ -34,3 +34,26 @@ function ChatRoom() {
       );
       console.log('[Client] Shared key imported from server.');
     });
+
+     socket.on('room_key', async ({ iv, ciphertext }) => {
+      console.group('[Client] room_key handler');
+      try {
+        const rawIv = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+        const rawCt = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+        const roomKeyRaw = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: rawIv },
+          sharedKeyRef.current,
+          rawCt
+        );
+        roomKeyRef.current = await crypto.subtle.importKey(
+          'raw',
+          new Uint8Array(roomKeyRaw),
+          { name: 'AES-GCM' },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      } catch (err) {
+        console.error('[Client] room_key error:', err);
+      }
+      console.groupEnd();
+    });
