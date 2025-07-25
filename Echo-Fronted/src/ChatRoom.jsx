@@ -5,7 +5,7 @@ import {
   TextField, Button, Box, Typography, AppBar, Toolbar
 } from '@mui/material';
 
-const socket = io('http://127.0.0.1:5000');
+const socket = io('https://echo-b2vk.onrender.com');
 
 function ChatRoom() {
   const [room, setRoom] = useState('');
