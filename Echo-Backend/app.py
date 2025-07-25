@@ -22,11 +22,20 @@ from fastapi.middleware.cors import CORSMiddleware
 fastapp = FastAPI()
 socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
+fastapp.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
+app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
 DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
+shared_secrets = {}   
+room_keys      = {}  
 
 def get_db():
     db = SessionLocal()
@@ -128,5 +137,27 @@ def login(payload: LoginSchema, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     return {"message": "Login successful", "user_id": user.id}
 
+@socket.on("join")
+async def on_join(sid, data):
+    room = data["room"]
+    if room not in room_keys:
+        room_keys[room] = os.urandom(32)
+    room_key = room_keys[room]
+
+    aesgcm = AESGCM(shared_secrets[sid])
+    iv = os.urandom(12)
+    ct = aesgcm.encrypt(iv, room_key, None)
+
+    await socket.emit("room_key", {
+        "iv":         base64.b64encode(iv).decode(),
+        "ciphertext": base64.b64encode(ct).decode()
+    }, to=sid)
+
+    await socket.enter_room(sid, room)
+    await socket.emit("receive_message", {
+        "display_name": data.get("display_name", "Anon"),
+        "message":      f"{data.get('display_name','Anon')} joined {room}"
+    }, room=room)
+
 if __name__ == "__main__":
-    uvicorn.run("app:app", port=5000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
