@@ -23,9 +23,7 @@ fastapp = FastAPI()
 socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
-#DB setup
-
-DATABASE_URL = "sqlite:///./test.db"
+DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
