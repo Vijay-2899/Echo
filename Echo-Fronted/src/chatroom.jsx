@@ -13,3 +13,24 @@ function ChatRoom() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [feedback, setFeedback] = useState('');
+
+  const clientPrivRef = useRef(null);
+  const sharedKeyRef = useRef(null);
+  const roomKeyRef = useRef(null);
+
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  useEffect(() => {
+    generateKeyPair();
+
+    socket.on('server_public_key', async ({ derived_key }) => {
+      const rawKeyBytes = Uint8Array.from(atob(derived_key), c => c.charCodeAt(0));
+      sharedKeyRef.current = await crypto.subtle.importKey(
+        'raw',
+        rawKeyBytes,
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt', 'decrypt']
+      );
+      console.log('[Client] Shared key imported from server.');
+    });
