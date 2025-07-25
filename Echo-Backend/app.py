@@ -30,6 +30,19 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
+class RegisterSchema(BaseModel):
+    email: str
+    username: str
+    password: str
+
+class VerifyOtpSchema(BaseModel):
+    email: str
+    otp: str
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str
+
 class User(Base):
     __tablename__ = "users"
     id              = Column(Integer, primary_key=True, index=True)
