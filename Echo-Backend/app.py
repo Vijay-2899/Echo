@@ -187,5 +187,13 @@ async def on_message(sid, data):
         "message":      data["message"]
     }, room=data["room"])
 
+@socket.on("leave")
+async def on_leave(sid, data):
+    await socket.leave_room(sid, data["room"])
+    await socket.emit("receive_message", {
+        "display_name": data.get("display_name","Ramya"),
+        "message":      f"{data.get('display_name','Ramya')} left {data['room']}"
+    }, room=data["room"])
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
