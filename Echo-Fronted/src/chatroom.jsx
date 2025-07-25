@@ -75,3 +75,13 @@ function ChatRoom() {
         console.error('Decrypt failed:', err);
       }
     });
+    socket.on('message', data => {
+      if (data.msg) setFeedback(data.msg);
+    });
+    socket.on('connect', () => setFeedback('Connected to server'));
+    socket.on('disconnect', () => setFeedback('Disconnected'));
+
+    return () => {
+      socket.removeAllListeners();
+    };
+  }, []);

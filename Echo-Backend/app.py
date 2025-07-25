@@ -1,115 +1,56 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import smtplib
-import ssl
-import random
 import os
-from email.message import EmailMessage
+import base64
+import random
+from datetime import datetime
+
+import uvicorn
+import socketio
+from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from passlib.context import CryptContext
+import smtplib
+from email.mime.text import MIMEText
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-from reportlab.pdfgen import canvas
-from PyPDF2 import PdfReader, PdfWriter
-
-app = Flask(__name__)
-CORS(app)
-
-otp_store = {}
-
-SMTP_EMAIL = 'your_email@gmail.com'
-SMTP_PASS = 'your_app_password'
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 465
-
-@app.route('/send-otp', methods=['POST'])
-def send_otp():
-    email = request.json.get('email')
-    otp = str(random.randint(100000, 999999))
-    otp_store[email] = otp
-    send_email(email, "Your OTP", f"Your login OTP is: {otp}")
-    return jsonify({"msg": "OTP sent"}), 200
-
-@app.route('/verify-otp', methods=['POST'])
-def verify_otp():
-    email = request.json.get('email')
-    otp = request.json.get('otp')
-    if otp_store.get(email) == otp:
-        return jsonify({"msg": "OTP verified"}), 200
-    return jsonify({"msg": "Invalid OTP"}), 401
-
-@app.route('/generate-keys', methods=['POST'])
-def generate_keys():
-    email = request.json['email']
-    name = request.json['name']  # e.g. 'john'
-    birthyear = request.json['birthyear']  # e.g. '2000'
-    password = (name[:4] + str(birthyear)).lower()
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 
-    priv = ec.generate_private_key(ec.SECP384R1(), default_backend())
-    pub = priv.public_key()
+fastapp = FastAPI()
+socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
-    priv_pem = priv.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.TraditionalOpenSSL,
-        serialization.NoEncryption()
-    )
-    pub_pem = pub.public_bytes(
-        serialization.Encoding.PEM,
-        serialization.PublicFormat.SubjectPublicKeyInfo
-    )
+#DB setup
 
-    pdf_path = f"/tmp/{email.replace('@','_')}_keys.pdf"
-    tmp = "/tmp/temp.pdf"
-    c = canvas.Canvas(tmp)
-    c.drawString(100, 750, "Your Secure Chat Keys")
-    c.drawString(100, 720, "Public Key:")
-    c.drawString(100, 700, pub_pem.decode().split('\n')[0])
-    c.drawString(100, 640, "Private Key (keep safe!):")
-    c.drawString(100, 620, priv_pem.decode().split('\n')[0])
-    c.save()
+DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+Base = declarative_base()
 
-    reader = PdfReader(tmp)
-    writer = PdfWriter()
-    for page in reader.pages:
-        writer.add_page(page)
-    writer.encrypt(password)
-    with open(pdf_path, "wb") as f:
-        writer.write(f)
-    os.remove(tmp)
+class User(Base):
+    __tablename__ = "users"
+    id              = Column(Integer, primary_key=True, index=True)
+    email           = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
 
-    send_email_with_attachment(email, "Your Secure Chat Keys",
-                               "Use your password to open the attached PDF.", pdf_path)
+class Otp(Base):
+    __tablename__ = "otps"
+    id         = Column(Integer, primary_key=True, index=True)
+    email      = Column(String, unique=True, index=True)
+    otp        = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    os.remove(pdf_path)
+Base.metadata.create_all(bind=engine)
 
-    return jsonify({"msg": "Keys sent via email", "public_key": pub_pem.decode()}), 200
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-def send_email(to, subject, body):
-    msg = EmailMessage()
-    msg['Subject'] = subject
-    msg['From'] = SMTP_EMAIL
-    msg['To'] = to
-    msg.set_content(body)
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
-        server.login(SMTP_EMAIL, SMTP_PASS)
-        server.send_message(msg)
-
-def send_email_with_attachment(to, subject, body, filepath):
-    msg = EmailMessage()
-    msg['Subject'] = subject
-    msg['From'] = SMTP_EMAIL
-    msg['To'] = to
-    msg.set_content(body)
-
-    with open(filepath, 'rb') as f:
-        msg.add_attachment(f.read(), maintype='application', subtype='pdf', filename=os.path.basename(filepath))
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
-        server.login(SMTP_EMAIL, SMTP_PASS)
-        server.send_message(msg)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+if __name__ == "__main__":
+    uvicorn.run("app:app", port=5000, reload=True)
