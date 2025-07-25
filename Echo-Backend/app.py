@@ -30,6 +30,13 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 class RegisterSchema(BaseModel):
     email: str
     username: str
@@ -57,6 +64,11 @@ class Otp(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
 @fastapp.post("/register")
 def register(payload: RegisterSchema, db: Session = Depends(get_db)):
@@ -89,12 +101,28 @@ def send_email_otp(email: str, otp: str):
         server.login(smtp_username, smtp_password)
         server.send_message(msg)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
+@fastapp.post("/verify-otp")
+def verify_otp(payload: VerifyOtpSchema, db: Session = Depends(get_db)):
+    otp_entry = db.query(Otp).filter(Otp.email == payload.email).first()
+    if not otp_entry:
+        raise HTTPException(status_code=404, detail="No OTP found")
+    if otp_entry.otp != payload.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user:
+        db.delete(otp_entry)
+        db.commit()
+        return {"message": "OTP verified. User already exists."}
+
+    hashed_pw = hash_password("Ramya@123")  # TODO: store real password
+    db.add(User(email=payload.email, hashed_password=hashed_pw))
+    db.delete(otp_entry)
+    db.commit()
+    return {"message": "OTP verified, user registered!"}
+
+
 
 if __name__ == "__main__":
     uvicorn.run("app:app", port=5000, reload=True)
