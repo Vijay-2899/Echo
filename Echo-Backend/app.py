@@ -18,18 +18,19 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-
 fastapp = FastAPI()
-socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
-app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
+
+# ✅ Add CORS middleware BEFORE wrapping it in socketio
 fastapp.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://echo-b2vk.onrender.com"],  
-    allow_methods=["*"],  
-    allow_headers=["*"], 
-    allow_credentials=True, 
+    allow_origins=["https://echo-b2vk.onrender.com"],  # Your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
+
 
 DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
