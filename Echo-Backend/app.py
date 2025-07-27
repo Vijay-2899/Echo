@@ -202,4 +202,5 @@ async def on_leave(sid, data):
     }, room=data["room"])
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
+    import os
+    uvicorn.run("app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
