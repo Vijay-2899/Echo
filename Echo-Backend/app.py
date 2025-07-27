@@ -24,9 +24,10 @@ socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 fastapp.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["https://echo-b2vk.onrender.com"],  
     allow_methods=["*"],  
-    allow_headers=["*"],  
+    allow_headers=["*"], 
+    allow_credentials=True, 
 )
 app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
