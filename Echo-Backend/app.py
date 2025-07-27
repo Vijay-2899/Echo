@@ -51,6 +51,8 @@ class RegisterSchema(BaseModel):
 
 class VerifyOtpSchema(BaseModel):
     email: str
+    username: str
+    password: str
     otp: str
 
 class LoginSchema(BaseModel):
@@ -60,6 +62,7 @@ class LoginSchema(BaseModel):
 class User(Base):
     __tablename__ = "users"
     id              = Column(Integer, primary_key=True, index=True)
+    username        = Column(String)
     email           = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
@@ -124,8 +127,9 @@ def verify_otp(payload: VerifyOtpSchema, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "OTP verified. User already exists."}
 
-    hashed_pw = hash_password("Ramya@123")  # TODO: store real password
-    db.add(User(email=payload.email, hashed_password=hashed_pw))
+    hashed_pw = hash_password(payload.password)  # TODO: store real password
+    new_user = User(email=payload.email, username=payload.username, hashed_password=hashed_pw)
+    db.add(new_user)
     db.delete(otp_entry)
     db.commit()
     return {"message": "OTP verified, user registered!"}
@@ -155,8 +159,8 @@ async def on_join(sid, data):
 
     await socket.enter_room(sid, room)
     await socket.emit("receive_message", {
-        "display_name": data.get("display_name", "Anon"),
-        "message":      f"{data.get('display_name','Anon')} joined {room}"
+        "display_name": data.get("display_name", "Ramya"),
+        "message":      f"{data.get('display_name','Ramya')} joined {room}"
     }, room=room)
 
 @socket.on("client_public_key")
