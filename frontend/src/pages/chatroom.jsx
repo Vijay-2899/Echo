@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './App.css';
 import { io } from 'socket.io-client';
 import {
   TextField, Button, Box, Typography, AppBar, Toolbar
