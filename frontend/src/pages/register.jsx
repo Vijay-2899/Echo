@@ -37,6 +37,7 @@ const Register = () => {
     try {
       await axios.post("https://echo-chat-5cpj.onrender.com/verify-otp", {
         email: formData.email,
+        username: formData.username,
         password: formData.password,
         otp: formData.otp,
       });
