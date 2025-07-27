@@ -17,7 +17,6 @@ function ChatRoom() {
   const sharedKeyRef = useRef(null);
   const roomKeyRef = useRef(null);
 
-  const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     generateKeyPair();

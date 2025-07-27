@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { TextField, Button, Typography, Box } from "@mui/material";
 
 const Login = () => {
-  const [message, setMessage] = useState('');
+  const [setMessage] = useState('');
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -81,7 +80,7 @@ const Login = () => {
           </Button>
         
       <Typography variant="body2" sx={{ mt: 2 }}>
-        Don't have an account? <a href="/register" className="text-blue-500">Register here</a>
+        Don't have an account? <Link to="/register" className="text-blue-500">Register here</Link>
       </Typography>
     </Box>
   );
