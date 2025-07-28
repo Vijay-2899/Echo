@@ -4,7 +4,10 @@ import {
   TextField, Button, Box, Typography, AppBar, Toolbar
 } from '@mui/material';
 
-const socket = io('https://echo-chat-5cpj.onrender.com');
+const socket = io('https://echo-chat-5cpj.onrender.com',{
+  transports: ["polling", "websocket"],  // ✅ include polling
+  withCredentials: true                 // ✅ since you're using cors_allowed_origins=["*"] or without credentials
+});
 
 function ChatRoom() {
   const [room, setRoom] = useState('');

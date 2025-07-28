@@ -3,9 +3,9 @@ import base64
 import random
 from datetime import datetime
 
-import uvicorn
 import socketio
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from passlib.context import CryptContext
@@ -17,16 +17,27 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel
 
-# Create FastAPI app
-fastapp = FastAPI()
+origins = [
+    "https://echo-b2vk.onrender.com",
+    "http://localhost:3000",
+]
 
-# Setup Socket.IO
-socket = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins=["*"]
+fastapp = FastAPI()
+fastapp.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Combine FastAPI with Socket.IO
+socket = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins=origins,
+    logger=True,
+    engineio_logger=True,
+)
+
 sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
 
@@ -34,8 +45,8 @@ DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
-shared_secrets = {}   
-room_keys      = {}  
+shared_secrets = {}
+room_keys = {}
 
 def get_db():
     db = SessionLocal()
@@ -61,16 +72,16 @@ class LoginSchema(BaseModel):
 
 class User(Base):
     __tablename__ = "users"
-    id              = Column(Integer, primary_key=True, index=True)
-    username        = Column(String)
-    email           = Column(String, unique=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String)
+    email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
 class Otp(Base):
     __tablename__ = "otps"
-    id         = Column(Integer, primary_key=True, index=True)
-    email      = Column(String, unique=True, index=True)
-    otp        = Column(String)
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    otp = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -127,7 +138,7 @@ def verify_otp(payload: VerifyOtpSchema, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "OTP verified. User already exists."}
 
-    hashed_pw = hash_password(payload.password)  # TODO: store real password
+    hashed_pw = hash_password(payload.password)
     new_user = User(email=payload.email, username=payload.username, hashed_password=hashed_pw)
     db.add(new_user)
     db.delete(otp_entry)
@@ -165,31 +176,20 @@ async def on_join(sid, data):
 
 @socket.on("client_public_key")
 async def handle_client_pubkey(sid, data):
-    client_pem = data["client_public_key"].encode()
-    client_pub = serialization.load_pem_public_key(client_pem)
+    client_pub = serialization.load_pem_public_key(data["client_public_key"].encode())
     server_priv = ec.generate_private_key(ec.SECP384R1())
-    server_pub  = server_priv.public_key()
-
     shared = server_priv.exchange(ec.ECDH(), client_pub)
-    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None,
-               info=b"handshake data",).derive(shared)
+    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"handshake data").derive(shared)
     shared_secrets[sid] = key
-
-    server_pem = server_pub.public_bytes(
+    server_pub = server_priv.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode()
-    await socket.emit("server_public_key", {
-        "server_public_key": server_pem,
-        "derived_key":       base64.b64encode(key).decode()
-    }, to=sid)
+    await socket.emit("server_public_key", {"server_public_key": server_pub, "derived_key": base64.b64encode(key).decode()}, to=sid)
 
 @socket.on("send_message")
 async def on_message(sid, data):
-    await socket.emit("receive_message", {
-        "display_name": data["display_name"],
-        "message":      data["message"]
-    }, room=data["room"])
+    await socket.emit("receive_message", {"display_name": data["display_name"], "message": data["message"]}, room=data["room"])
 
 @socket.on("leave")
 async def on_leave(sid, data):
@@ -199,6 +199,7 @@ async def on_leave(sid, data):
         "message":      f"{data.get('display_name','Ramya')} left {data['room']}"
     }, room=data["room"])
 
+# 5) Uvicorn entrypoint
 if __name__ == "__main__":
-    import os
+    import uvicorn
     uvicorn.run("app:sio_app", host="0.0.0.0", port=10000, reload=True)
