@@ -24,6 +24,7 @@ fastapp = FastAPI()
 # Setup Socket.IO
 socket = socketio.AsyncServer(
     async_mode="asgi",
+    cors_allowed_origins=["https://echo-b2vk.onrender.com"]
 )
 
 # Combine FastAPI with Socket.IO
@@ -32,7 +33,7 @@ sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 # Apply CORS to the whole ASGI app
 app = CORSMiddleware(
     sio_app,
-    allow_origins=["https://echo-b2vk.onrender.com"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
