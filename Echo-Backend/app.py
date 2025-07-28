@@ -16,7 +16,6 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
 
 # Create FastAPI app
 fastapp = FastAPI()
@@ -202,4 +201,4 @@ async def on_leave(sid, data):
 
 if __name__ == "__main__":
     import os
-    uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
+    uvicorn.run("app:sio_app", host="0.0.0.0", port=10000, reload=True)
