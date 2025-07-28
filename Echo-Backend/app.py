@@ -24,7 +24,6 @@ fastapp = FastAPI()
 # Setup Socket.IO
 socket = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=["https://echo-b2vk.onrender.com"]
 )
 
 # Combine FastAPI with Socket.IO
