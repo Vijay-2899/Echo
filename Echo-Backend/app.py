@@ -33,6 +33,7 @@ sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 # Apply CORS to the whole ASGI app
 app = CORSMiddleware(
     sio_app,
+    allow_origin_regex="https?://.*",
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -210,4 +211,4 @@ async def on_leave(sid, data):
 
 if __name__ == "__main__":
     import os
-    uvicorn.run("app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    uvicorn.run("app:app", host="0.0.0.0", port=10000, reload=True)
