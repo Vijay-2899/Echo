@@ -16,23 +16,28 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
-
+# Create FastAPI app
 fastapp = FastAPI()
-fastapp = CORSMiddleware(
-    fastapp,
+
+# Setup Socket.IO
+socket = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins=["https://echo-b2vk.onrender.com"]
+)
+
+# Combine FastAPI with Socket.IO
+sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
+
+# Apply CORS to the whole ASGI app
+app = CORSMiddleware(
+    sio_app,
     allow_origins=["https://echo-b2vk.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
-socket = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins=["https://echo-b2vk.onrender.com"]
-)
-app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
 DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
