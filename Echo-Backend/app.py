@@ -20,8 +20,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 
 fastapp = FastAPI()
-app = CORSMiddleware(
-    app,
+fastapp = CORSMiddleware(
+    fastapp,
     allow_origins=["https://echo-b2vk.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
