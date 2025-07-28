@@ -19,18 +19,19 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 fastapp = FastAPI()
-
-# ✅ Add CORS middleware BEFORE wrapping it in socketio
 fastapp.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://echo-b2vk.onrender.com"],  # Your frontend domain
+    allow_origins=["https://echo-b2vk.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-socket = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
-app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
+socket = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins=["https://echo-b2vk.onrender.com"]
+)
+app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
 DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
