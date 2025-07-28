@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useNavigate } from 'react-router-dom';
 import {
   TextField, Button, Box, Typography, AppBar, Toolbar
 } from '@mui/material';
@@ -10,6 +11,8 @@ const socket = io('https://echo-chat-5cpj.onrender.com',{
 });
 
 function ChatRoom() {
+  const navigate = useNavigate();
+
   const [room, setRoom] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [message, setMessage] = useState('');
@@ -150,7 +153,7 @@ function ChatRoom() {
             color="inherit"
             onClick={() => {
               localStorage.removeItem('user');
-              window.location.href = '/login';
+              navigate('/login');
             }}
           >
             Logout
