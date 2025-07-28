@@ -16,15 +16,16 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
+
 
 fastapp = FastAPI()
-fastapp.add_middleware(
-    CORSMiddleware,
+app = CORSMiddleware(
+    app,
     allow_origins=["https://echo-b2vk.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 socket = socketio.AsyncServer(
