@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { TextField, Button, Typography, Box } from "@mui/material";
 
 const Login = () => {
-  const [setMessage] = useState('');
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -34,12 +33,10 @@ const Login = () => {
       }
 
       console.log('Login success:', data);
-      setMessage('Login successful!');
       localStorage.setItem('user', JSON.stringify(data));
       navigate('/chatroom');
     } catch (err) {
       console.error('Login error:', err.message);
-      setMessage(err.message);
     }
   };
 
