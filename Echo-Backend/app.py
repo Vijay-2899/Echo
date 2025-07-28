@@ -30,15 +30,6 @@ socket = socketio.AsyncServer(
 # Combine FastAPI with Socket.IO
 sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
-# Apply CORS to the whole ASGI app
-app = CORSMiddleware(
-    sio_app,
-    allow_origin_regex="https?://.*",
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
 
 DATABASE_URL = "sqlite:///./users.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
