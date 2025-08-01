@@ -40,9 +40,11 @@ socket = socketio.AsyncServer(
 
 sio_app = socketio.ASGIApp(socket, other_asgi_app=fastapp)
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+smtp_Username = os.environ.get("USERNAME")
+smtp_Password = os.environ.get("PASSWORD")
 
-DATABASE_URL = "sqlite:///./users.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 shared_secrets = {}
@@ -97,8 +99,8 @@ def verify_password(plain: str, hashed: str) -> bool:
 def send_email_otp(email: str, otp: str):
     smtp_server   = "smtp.gmail.com"
     smtp_port     = 587
-    smtp_username = "bojjaramya99@gmail.com"
-    smtp_password = "nkbf exaz hjzp vptx"  # app password
+    smtp_username = smtp_Username
+    smtp_password = smtp_Password
 
     msg = MIMEText(f"Your OTP is: {otp}")
     msg["Subject"] = "Your OTP"
@@ -199,7 +201,6 @@ async def on_leave(sid, data):
         "message":      f"{data.get('display_name','Ramya')} left {data['room']}"
     }, room=data["room"])
 
-# 5) Uvicorn entrypoint
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:sio_app", host="0.0.0.0", port=10000, reload=True)
